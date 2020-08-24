@@ -10,12 +10,12 @@
 
 title: ColdFusionX                          # the main title
 
-tagline: CTF Player | Pentester | InfoSec Blogger  # it will display as the sub-title
+tagline: CTF Player | Pentester | InfoSec Enthusiast  # it will display as the sub-title
 
 description: >-                        # used by seo meta and the atom feed
-  A minimal, portfolio, sidebar,
-  bootstrap Jekyll theme with responsive web design
-  and focuses on text presentation.
+Hackthebox machines Walkthroughs
+Infosec Blogs
+Payloads & CheatSheets
 
 # Replace with the website url, e.g. 'https://username.github.io'
 url: 'https://ColdFusionX.github.io'
@@ -32,7 +32,7 @@ twitter:
 
 social:
   name: Mayank Deshmukh                  # it will shows as the copyright owner in Footer
-  email: example@doamin.com             # change to your email address
+  email: Coldfx@protonmail.ch             # change to your email address
   links:
     # The first element serves as the copyright owner's link
     - https://twitter.com/mayankmdd      # change to your twitter homepage
@@ -51,7 +51,7 @@ google_site_verification: google_meta_tag_verification # change to your verifica
 baseurl: ''
 
 # Change to your timezone › http://www.timezoneconverter.com/cgi-bin/findzone/findzone
-timezone: Asia/Shanghai
+timezone: Asia/Kolkata
 
 google_analytics:
   id: ''          # Fill with your Google Analytics ID
@@ -78,7 +78,7 @@ disqus:
 #
 #     dark   - Use the dark color scheme
 #
-theme_mode: dual
+theme_mode: dark
 
 # boolean type, global switch for ToC in posts.
 toc: true
