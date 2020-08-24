@@ -15,9 +15,13 @@
   icon: 'fas fa-envelope'
   noblank: true            # open link in current tab
 -
-  type: rss
-  icon: 'fas fa-rss'
-  noblank: true
+  type: hackthebox
+  icon: 'fas fa-cube'
+  url: 'https://www.hackthebox.eu/profile/69842'
+
+#  type: rss
+#  icon: 'fas fa-rss'
+#  noblank: true
 
 # Uncomment and complete the url below to enable more contact options
 # -
