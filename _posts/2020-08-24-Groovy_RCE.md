@@ -2,7 +2,7 @@
 title: "Groovy Script RCE methods"
 date: 2020-08-24 18:13:44 +/-0800
 categories: [Cheatsheets,Scripts]
-tags: [Remotecodeexecution,groovy,RCE,jenkins]
+tags: [Remote Code Execution,Groovy,RCE,Jenkins]
 image: /assets/img/Posts/groovy.jpg
 ---
 
