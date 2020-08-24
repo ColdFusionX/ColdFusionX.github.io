@@ -13,9 +13,9 @@ title: ColdFusionX                          # the main title
 tagline: CTF Player | Pentester | InfoSec Enthusiast  # it will display as the sub-title
 
 description: >-                        # used by seo meta and the atom feed
-Hackthebox machines Walkthroughs
-Infosec Blogs
-Payloads & CheatSheets
+  Hackthebox machines Walkthroughs.
+  Infosec Blogs.
+  Payloads & CheatSheets.
 
 # Replace with the website url, e.g. 'https://username.github.io'
 url: 'https://ColdFusionX.github.io'
