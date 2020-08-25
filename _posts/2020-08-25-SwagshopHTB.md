@@ -3,7 +3,7 @@ title: "HackTheBox — SwagShop Writeup"
 date: 2020-08-25 22:42:00 +/-0800
 categories: [HackTheBox,Linux Machines]
 tags: [Magento, vi, sudo, php, wfuzz, Froghopper attack, Swagshop]
-image: /assets/img/Post/SwagShop.png
+image: /assets/img/Posts/SwagShop.png
 ---
 
 > SwagShop from HackTheBox is an retired machine which had a web service running with an outdated vulnerable Magento CMS that allows us to perform an RCE and get a reverse shell. Later we can exploit sudo privileges to run vi as root through sudo command and exploit it to get root shell.
