@@ -1,5 +1,5 @@
 ---
-title: "Groovy Script Remote Code Execution"
+title: "Groovy Script — Remote Code Execution"
 date: 2020-08-24 18:13:44 +/-0800
 categories: [Cheatsheets,Scripts]
 tags: [Remote Code Execution,Groovy,RCE,Jenkins]
