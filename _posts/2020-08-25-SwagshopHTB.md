@@ -23,7 +23,7 @@ The web application is running on **Magento CMS** and on the bottom of the page 
 
 ![wfuzz](/assets/img/Posts/Swagshop/wfuzz.png)
 
-Lets run Searchsploit to look for publicly available exploits and we found out a exploit `Magento eCommerce- Remote code Execution-37977.py` which creates a admin account credentials which can be used to login to admin panel on <http://swagshop.htb/index.php/admin/>
+Lets run Searchsploit to look for publicly available exploits and we found out a exploit `Magento eCommerce- Remote code Execution-37977.py` that creates a admin account on Magento CMS which can be used to login to admin panel on <http://swagshop.htb/index.php/admin/>
 
 ![searchsploit](/assets/img/Posts/Swagshop/searchsploit.png)
 
