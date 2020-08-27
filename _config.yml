@@ -13,14 +13,12 @@ title: ColdFusionX                          # the main title
 tagline: CTF Player | Pentester | InfoSec Enthusiast  # it will display as the sub-title
 
 description: >-                        # used by seo meta and the atom feed
-  Hackthebox Machines Writeups.
-  Infosec Articles.
-  Pentest CheatSheets & Scripts.
+  Realm of Knowledge
 
 # Replace with the website url, e.g. 'https://username.github.io'
 url: 'https://ColdFusionX.github.io'
 
-author: Mayank                 # change to your full name
+author: Mayank Deshmukh               # change to your full name
 
 avatar: /assets/img/sample/profile.jpg   # support internet resources
 
