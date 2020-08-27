@@ -1,6 +1,6 @@
 ---
 title: "HackTheBox — SwagShop Writeup"
-date: 2020-08-25 22:42:00 +/-0800
+date: 2020-08-25 22:42:00 +0530
 categories: [HackTheBox,Linux Machines]
 tags: [Magento, vi, sudo, php, wfuzz, Froghopper attack, Swagshop]
 image: /assets/img/Posts/SwagShop.png
