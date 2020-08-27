@@ -25,6 +25,6 @@
   icon: "fas fa-archive"
 -
   name: "About"
-  icon: "fas fa-info"
+  icon: "fas fa-id-card"
   path: tabs
   url: about
