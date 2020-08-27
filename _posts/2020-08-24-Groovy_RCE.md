@@ -2,7 +2,7 @@
 title: "Groovy Script — Remote Code Execution"
 date: 2020-08-24 18:13:44 +0530
 categories: [Cheatsheets,Scripts]
-tags: [Remote Code Execution,Groovy,RCE,Jenkins]
+tags: [Remote Code Execution,Groovy,RCE,Jenkins, Reverse Shell]
 image: /assets/img/Posts/groovy.jpg
 ---
 
