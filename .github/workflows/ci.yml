@@ -22,7 +22,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-latest, macos-latest]
+        os: [ubuntu-latest]
 
     steps:
       - uses: actions/setup-ruby@v1
@@ -69,3 +69,16 @@ jobs:
       - name: Test Site
         run: |
           bash tools/test.sh
+          
+      - name: Dumplast mod Site
+        run: |
+          bash _scripts/sh/dump_lastmod.sh
+      
+      - name: createpage Site
+        run: |
+          bash _scripts/sh/create_pages.sh
+          
+      - name: sync_monitor Site
+        run: |
+          bash _scripts/sh/sync_monitor.sh
+      
