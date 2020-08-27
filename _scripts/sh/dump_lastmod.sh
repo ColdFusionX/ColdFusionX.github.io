@@ -2,7 +2,7 @@
 #
 # Find out the posts that have been modified and record
 # its lastmod information to file '_data/updates.yml'
-#
+# Try Run
 # Usage:
 #     Call from the '_posts' sibling directory.
 #
