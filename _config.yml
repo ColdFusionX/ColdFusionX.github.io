@@ -10,8 +10,8 @@
 
 title: ColdFusionX                          # the main title
 
-tagline: CTF Player | Pentester # it will display as the sub-title
-          Infosec Enthusiast
+tagline: CTF Player | InfoSec Enthusiast # it will display as the sub-title
+          
 description: >-                        # used by seo meta and the atom feed
   Realm of Knowledge
 
