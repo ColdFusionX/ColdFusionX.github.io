@@ -1,4 +1,5 @@
-# This is a basic workflow to help you get started with Actions
+# This is a workflow to deploy tags and update lastmod via automation
+# Author : ColdFusionX
 
 name: CI
 
@@ -27,7 +28,7 @@ jobs:
         with:
           fetch-depth: 0
 
-      # Runs a single command using the runners shell
+      # Runs Publish & Lastmod script
       - name: Publish script
         run: |
           bash tools/publish.sh
