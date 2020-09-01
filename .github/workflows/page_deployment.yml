@@ -32,3 +32,6 @@ jobs:
         run: |
           bash tools/publish.sh
           
+      - name: Lastmod script
+        run: |
+          bash _scripts/sh/dump_lastmod.sh        
