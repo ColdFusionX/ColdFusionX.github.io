@@ -1,6 +1,6 @@
 ---
 title: "HackTheBox — Legacy Writeup"
-date: 2020-09-01 22:42:00 +0530
+date: 2020-09-02 12:06:00 +0530
 categories: [HackTheBox,Windows Machines]
 tags: [masscan, legacy, XP, SMB, ms08-67, ms17-010, shellcode, whoami, smbserver, metasploit, ms08_067_netapi]
 image: /assets/img/Posts/Legacy.png
