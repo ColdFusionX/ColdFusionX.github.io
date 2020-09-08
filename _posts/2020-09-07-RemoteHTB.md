@@ -2,7 +2,7 @@
 title: "HackTheBox — Remote Writeup"
 date: 2020-09-08 14:06:00 +0530
 categories: [HackTheBox,Windows Machines]
-tags: [NFS, winpeas, umbraco, john, TeamViewer, crackmapexec, Nishang, usosvc, decrypt, AES, remote]
+tags: [NFS, winpeas, umbraco, john, TeamViewer, crackmapexec, Nishang, usosvc, decrypt, AES, remote, SHA1]
 image: /assets/img/Posts/Remote.png
 ---
 
