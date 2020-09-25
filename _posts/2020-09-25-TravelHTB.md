@@ -287,7 +287,7 @@ With reference to the `README.md` file we understand the following:
 
 Lets break the code into four different parts to understand it easily:
 
-1. Its including template.php, so all the Classes, Objects & functions from template.php are being used by rss_template.php
+- Its including template.php, so all the Classes, Objects & functions from template.php are being used by rss_template.php
 ```php
 <?php
 /*
@@ -297,7 +297,7 @@ include('template.php'); // Include all classes, object & functions from templat
 get_header();
 ?>
 ```
-2. The site is using memcache to store the URL generated contents in cache up to 60 seconds and uses `xct_` as prefix for the generated key.
+- The site is using memcache to store the URL generated contents in cache up to 60 seconds and uses `xct_` as prefix for the generated key.
 
 ```php
 $data = url_get_contents($url);  // Function defined in template.php
@@ -309,7 +309,7 @@ $data = url_get_contents($url);  // Function defined in template.php
          $simplepie->init();
          $simplepie->handle_content_type();
 ```
-3.In this part of the code, the URL location for RSS feeds gets defined by `get_feed` function taking `url` variable value. First it will check if the url is containing `custom_feed_url` parameter where it will parse the user control custom URL for the RSS feeds, if the `custom_feed_url` parameter isn't present in the URL request it will use the feed from default location `http://www.travel.htb/newsfeed/customfeed.xml` for generating the feeds.
+- In this part of the code, the URL location for RSS feeds gets defined by `get_feed` function taking `url` variable value. First it will check if the url is containing `custom_feed_url` parameter where it will parse the user control custom URL for the RSS feeds, if the `custom_feed_url` parameter isn't present in the URL request it will use the feed from default location `http://www.travel.htb/newsfeed/customfeed.xml` for generating the feeds.
 
 ```php
 $url = $_SERVER['QUERY_STRING'];
@@ -322,7 +322,7 @@ $url = $_SERVER['QUERY_STRING'];
       $feed = get_feed($url); // Set feed to or user-specified (custom_feed_url) or default
 ```
 
-4.In the later part of the code we see, if the `debug` parameter was supplied in the `GET request`, a `debug.php` script gets executed.
+- In the later part of the code we see, if the `debug` parameter was supplied in the `GET request`, a `debug.php` script gets executed.
 
 ```php
 <!--
@@ -339,7 +339,7 @@ if (isset($_GET['debug'])){
 
 Let's break this code into three parts:
 
-1. The `safe($url)` function takes the url value specified in custom_feel_url parameter, decodes the url-encoded string and checks for certain strings in the url to prevent it against LFI, Command Injection and SSRF attacks. Although SSRF filter can be bypassed by either using `0` or `LOCALHOST` instead of 127.0.0.1 to reach localhost.
+- The `safe($url)` function takes the url value specified in custom_feel_url parameter, decodes the url-encoded string and checks for certain strings in the url to prevent it against LFI, Command Injection and SSRF attacks. Although SSRF filter can be bypassed by either using `0` or `LOCALHOST` instead of 127.0.0.1 to reach localhost.
 
 ```php
 function safe($url)
@@ -366,7 +366,7 @@ function safe($url)
 }
 ```
 
-2.Here the function `url_get_contents($url)` first calls `safe` and `escapeshellarg` on the url, and executes it with `shell_exec` for `curl` to retrive its contents and output is returned.
+- Here the function `url_get_contents($url)` first calls `safe` and `escapeshellarg` on the url, and executes it with `shell_exec` for `curl` to retrive its contents and output is returned.
 
 ```php
 function url_get_contents ($url) {
@@ -383,7 +383,7 @@ function url_get_contents ($url) {
     return $output;
 ```
 
-3.In the last part of the code, we see a `TemplateHelper` class which isn't used anywhere inside the rss_template code, the comments on the top of file indicates it's the logging functionality which was also mentioned as ToDo in the Readme file.
+- In the last part of the code, we see a `TemplateHelper` class which isn't used anywhere inside the rss_template code, the comments on the top of file indicates it's the logging functionality which was also mentioned as ToDo in the Readme file.
 
 ```console
 /**
