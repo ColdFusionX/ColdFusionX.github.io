@@ -6,7 +6,7 @@ tags: [hackthebox, Blackfield, ctf, crackmapexec, smbclient, kerbrute, as-rep-ro
 image: /assets/img/Posts/Blackfield.png
 ---
 
-> Blackfield was a exceptional Windows box centralized on Active Directory environment, initial SMB enumeration reveals potential usernames of Domain accounts. We validate them using kerbrute - a tool which send TGT requests with no pre-authentication property to validate user accounts. Later we use AS-REP roasting technique to find and crack the hash of an account. With the new user creds we'll use BloodHound to discover an special privilege where we can forcefully change password for another account over RPC. Further with the newly owned account we get access to an SMB share containing data retrieved during audit and forensic investigation, where we find a memory capture of LSASS process and dump the hashes from it using pypykatz. Using the discovered hash we get an WinRM Shell on the box. For elevating privileges to Administrator we'll abuse Backup privileges of a Backup Operator to grab a copy of NTDS.dit and SYSTEM.hive and retrieve Administrator hash.
+> Blackfield was a exceptional Windows box centralized on Active Directory environment, initial SMB enumeration reveals potential usernames of Domain accounts. We validate them using kerbrute - a tool which send TGT requests with no pre-authentication property to validate user accounts. Later we use AS-REP roasting technique to find and crack the hash of an account. With the new user creds we'll use BloodHound to discover an special privilege where we can forcefully change password for another account over RPC. Further with the newly owned account we get access to an SMB share containing data retrieved during audit and forensic investigation, where we find a memory capture of LSASS process and dump the hashes from it using pypykatz. Using the discovered hash we get an WinRM Shell on the box. For elevating privileges to Administrator we'll abuse Backup privileges of a Backup Operator to grab a copy of NTDS.dit and SYSTEM hive and retrieve Administrator hash.
 
 ## Reconnaissance
 
@@ -601,7 +601,7 @@ The command completed successfully.
 ### Attack Scenario
 
 - Grab a copy of `NTDS.dit` file, a database that stores Active Directory users credentials.
-- Next, we will grab SYSTEM.hive file which contains System boot key essential to decrypt the NTDS.dit
+- Next, we will grab SYSTEM hive file which contains System boot key essential to decrypt the NTDS.dit
 - Using Impacket's secretsdump script to extract NTLM hashes of all the users in the domain from NTDS.dit
 
 ## PrivEsc Method #1 - wbadmin
@@ -670,7 +670,7 @@ Mode                LastWriteTime         Length Name
 d-----         10/5/2020  3:27 PM                WindowsImageBackup
 ```
 
-Now that we have obtainted WindowsImageBackup of `NTDS.dit` file inside the SMB share, we'll recovery the file inside our directory `cd C:\Users\svc_backup\Documents\`
+Now that we have obtained WindowsImageBackup of `NTDS.dit` file inside the SMB share, we'll recovery the file inside our directory `cd C:\Users\svc_backup\Documents\`
 
 For recovering the backup we need the backup version:
 
@@ -734,9 +734,9 @@ Info: Downloading C:\Users\svc_backup\Documents\ntds.dit to ntds.dit
 
 Info: Download successful!
 ```
-#### SYSTEM.hive
+#### SYSTEM hive
 
-To extract the NTLM hashes from `ntds.dit` file, we'll be needing SYSTEM.hive file which contains the System boot key essential to decrypt the NTDS.dit.
+To extract the NTLM hashes from `ntds.dit` file, we'll be needing SYSTEM hive file which contains the System boot key essential to decrypt the NTDS.dit.
 
 #### Grabbing SYSTEM:
 
@@ -950,7 +950,7 @@ Mode                LastWriteTime         Length Name
 ----                -------------         ------ ----
 -a----        10/5/2020  3:48 PM       18874368 ntds.dit
 ```
-Bingo ! Now we can now download `ntds.dit` using `download` command. For generating SYSTEM.hive we'll use the same command `reg save HKLM\SYSTEM C:\Users\svc_backup\Documents\SYSTEM` used in Method #1
+Bingo ! Now we can now download `ntds.dit` using `download` command. For generating SYSTEM hive we'll use the same command `reg save HKLM\SYSTEM C:\Users\svc_backup\Documents\SYSTEM` used in Method #1
 
 ### Copy-FileSeBackupPrivilege  
 
@@ -998,7 +998,7 @@ d-----        10/5/2020   3:38 PM                new_ntds
 -a----        10/5/2020   4:36 PM       17682432 SYSTEM
 ```
 
-Downloading both the newly obtained `SYSTEM.hive` & `ntds.dit` and Running `secretsdump.py` to dump Administrator hash.
+Downloading both the newly obtained `SYSTEM` & `ntds.dit` and Running `secretsdump.py` to dump Administrator hash.
 
 #### Administrator Shell
 
