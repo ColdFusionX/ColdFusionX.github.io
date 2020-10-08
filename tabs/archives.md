@@ -38,3 +38,5 @@ type: archives
   {% endif %}
 {% endfor %}
 </div>
+
+<script data-name="BMC-Widget" src="https://cdnjs.buymeacoffee.com/1.0.0/widget.prod.min.js" data-id="ColdFusionX" data-description="Your Support means the World to me !" data-message="Thank you for visiting. Hope you liked my Blog!" data-color="#5F7FFF" data-position="" data-x_margin="18" data-y_margin="18"></script>
