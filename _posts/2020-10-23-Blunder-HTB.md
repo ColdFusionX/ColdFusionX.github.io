@@ -145,7 +145,7 @@ While trying ``admin:admin` credential on login page, inside the network section
 
 ![network](/assets/img/Posts/Blunder/network.png)
 
-On [**searching**](https://github.com/bludit/bludit/search?q=bootstrap.min.css%3Fversion) for `bootstrap.min.css?verion` inside bludit repository, we understand it's the Bludit Version that is being disclosed.
+On [**searching**](https://github.com/bludit/bludit/search?q=bootstrap.min.css%3Fversion) for `bootstrap.min.css?version` inside bludit repository, we understand it's the Bludit Version that is being disclosed.
 
 ![version](/assets/img/Posts/Blunder/version.png)
 
