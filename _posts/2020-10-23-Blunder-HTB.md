@@ -455,8 +455,10 @@ www-data@blunder:/var/www$ cat bludit-3.10.0a/bl-content/databases/users.php
 }
 ```
 In todo.txt, we saw a note saying remove old users. Seems Admin decided to update the CMS but forgot to remove old config files.
+- Password Hash: `faca404fd5c0a31cf1897b823c695c85cffeb98d`
 
 Using [**Crackstation**](https://crackstation.net/) we have the cracked hash as `Password120`
+![crack](/assets/img/Posts/Blunder/crack.png)
 
 ### SU - hugo
 
