@@ -26,14 +26,14 @@ github:
   username: ColdFusionX             # change to your github username
 
 twitter:
-  username: mayankmdd            # change to your twitter username
+  username: ColdFusionX_            # change to your twitter username
 
 social:
   name: Mayank Deshmukh                  # it will shows as the copyright owner in Footer
   email: Coldfx@protonmail.ch             # change to your email address
   links:
     # The first element serves as the copyright owner's link
-    - https://twitter.com/mayankmdd      # change to your twitter homepage
+    - https://twitter.com/ColdFusionX_      # change to your twitter homepage
     - https://github.com/ColdFusionX       # change to your github homepage
     # Uncomment below to add more social links
     # - https://www.facebook.com/username
