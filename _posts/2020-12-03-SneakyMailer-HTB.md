@@ -372,7 +372,7 @@ Now, You should see Paul's mailbox has appeared on thunderbird, just right click
 
 Inside Sent items, we find two mails one of which is a password reset mail.
 
-![email5](/assets/img/Posts/SneakyM/email6.png)
+![email5](/assets/img/Posts/SneakyM/email5.png)
 
 ### FTP - developer
 
