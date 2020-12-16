@@ -407,7 +407,7 @@ The vulnerability exists within the xlock utility in OpenBSD within ‘xenocara/
 113    if (geteuid() == getuid()) {
 114       /* don't allow setuid apps to use LIBGL_DRIVERS_PATH */
 115       libPaths = getenv("LIBGL_DRIVERS_PATH");
-```
+
 
 openkeys$ which xlock | xargs ls -la
 -rwxr-sr-x  1 root  auth  3138520 Oct 12  2019 /usr/X11R6/bin/xlock
