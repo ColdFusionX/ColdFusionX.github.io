@@ -6,7 +6,7 @@ tags: [hackthebox, passage, ctf, nmap, masscan, fail2ban, cutenews, php, reverse
 image: /assets/img/Posts/Passage.png
 ---
 
-> Passage starts off with web enumeration where we discover the website running on a vulnerable instance of CuteNews CMS and exploit it through bypassing Avatar Image Upload functionality to drop a PHP Web shell thereby gaining RCE. Next we recover password hashes from PHP serialized data stored in base64 encoded fromat, crack them and gain access to next user which shares an SSH key with another user on the box. For elevating privileges to root we exploit a bug in USBCreator D-Bus interface which allows us read/write files as root.
+> Passage starts off with web enumeration where we discover the website running on a vulnerable instance of CuteNews CMS and exploit it through bypassing Avatar Image Upload functionality to drop a PHP Web shell thereby gaining RCE. Next we recover password hashes from PHP serialized data stored in base64 encoded format, crack them and gain access to next user which shares an SSH key with another user on the box. For elevating privileges to root we exploit a bug in USBCreator D-Bus interface which allows us read/write files as root.
 
 ## Reconnaissance
 
